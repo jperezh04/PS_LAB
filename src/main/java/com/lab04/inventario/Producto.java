@@ -1,4 +1,4 @@
-package com.lab04;
+package com.lab04.inventario;
 
 import java.util.ArrayList;
 import java.util.Collections;

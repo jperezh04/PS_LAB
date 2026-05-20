@@ -1,4 +1,4 @@
-package com.lab04;
+package com.lab04.resueltos;
 
 /**
  * Clase Calculadora con operaciones aritméticas básicas.

@@ -1,4 +1,4 @@
-package com.lab04;
+package com.lab04.resueltos;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

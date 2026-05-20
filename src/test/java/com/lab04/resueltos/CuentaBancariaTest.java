@@ -1,4 +1,4 @@
-package com.lab04;
+package com.lab04.resueltos;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;

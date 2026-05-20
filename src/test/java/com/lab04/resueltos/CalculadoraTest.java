@@ -1,4 +1,4 @@
-package com.lab04;
+package com.lab04.resueltos;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,5 +1,8 @@
-package com.lab04;
+package com.lab04.carrito;
 
+import com.lab04.carrito.CarritoCompra;
+import com.lab04.carrito.Producto;
+import com.lab04.carrito.ServicioPrecio;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
