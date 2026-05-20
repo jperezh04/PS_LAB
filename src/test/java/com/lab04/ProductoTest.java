@@ -153,6 +153,21 @@ class ProductoTest {
         }
 
         @Test
+        @DisplayName("Debe permitir extraer exactamente todo el stock disponible")
+        void debePermitirExtraerTodoElStockDisponible() {
+            producto.extraerStock(10);
+
+            assertAll(
+                    () -> assertEquals(0, producto.consultarStock()),
+                    () -> assertEquals(1, producto.getMovimientos().size()),
+                    () -> assertEquals(
+                            TipoMovimiento.SALIDA,
+                            producto.getMovimientos().get(0).getTipo()
+                    )
+            );
+        }
+
+        @Test
         @DisplayName("Debe registrar movimiento de salida al extraer stock")
         void debeRegistrarMovimientoSalida() {
             producto.extraerStock(3);
@@ -164,6 +179,38 @@ class ProductoTest {
                     () -> assertEquals(TipoMovimiento.SALIDA, movimientos.get(0).getTipo()),
                     () -> assertEquals(3, movimientos.get(0).getCantidad()),
                     () -> assertNotNull(movimientos.get(0).getFecha())
+            );
+        }
+
+        @Test
+        @DisplayName("Debe registrar múltiples movimientos correctamente")
+        void debeRegistrarMultiplesMovimientosCorrectamente() {
+
+            producto.agregarStock(5);   // stock: 15
+            producto.extraerStock(3);   // stock: 12
+            producto.agregarStock(2);   // stock: 14
+
+            List<Movimiento> movimientos = producto.getMovimientos();
+
+            assertAll(
+                    () -> assertEquals(3, movimientos.size()),
+
+                    () -> assertEquals(
+                            TipoMovimiento.ENTRADA,
+                            movimientos.get(0).getTipo()
+                    ),
+
+                    () -> assertEquals(
+                            TipoMovimiento.SALIDA,
+                            movimientos.get(1).getTipo()
+                    ),
+
+                    () -> assertEquals(
+                            TipoMovimiento.ENTRADA,
+                            movimientos.get(2).getTipo()
+                    ),
+
+                    () -> assertEquals(14, producto.consultarStock())
             );
         }
 
