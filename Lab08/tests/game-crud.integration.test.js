@@ -76,6 +76,20 @@ describe('Admin game CRUD integration flow', () => {
     expect(response.body.message).toBe('Validation error');
   });
 
+  it('rejects semantic edge case: required field left empty', async () => {
+    const response = await request(app)
+      .post('/api/admin/games')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .field({ ...baseGamePayload(), title: '' })
+      .attach('coverImage', path.resolve('tests/fixtures/cover.png'));
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe('Validation error');
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'title' })])
+    );
+  });
+
   it('rejects customer access to admin route with 403', async () => {
     const customerToken = await loginAs(app, 'alex@aether.dev', 'Player1234');
     const response = await request(app)
