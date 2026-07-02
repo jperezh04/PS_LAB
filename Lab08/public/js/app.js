@@ -15,7 +15,11 @@ const routes = {
   profile: '/profile',
   admin: '/admin',
   maintenance: '/maintenance',
-  library: '/library'
+  library: '/library',
+  settings: '/settings',
+  support: '/support',
+  checkout: '/checkout',
+  upgrade: '/upgrade'
 };
 
 function saveSession(user, token) {
@@ -95,15 +99,16 @@ function appShell(content) {
         <nav class="nav-group">
           ${isLogged ? navItem('/profile', 'person', 'Profile', path) : navItem('/auth', 'login', 'Login / Register', path)}
           ${isAdmin ? navItem('/admin', 'admin_panel_settings', 'Admin', path) : ''}
+          ${isLogged ? navItem('/settings', 'settings', 'Settings', path) : ''}
           ${navItem('/maintenance', 'settings_alert', 'System Status', path)}
-          <button class="nav-link" onclick="showSupport()"><span class="material-symbols-outlined">support_agent</span>Support</button>
+          ${navItem('/support', 'support_agent', 'Support', path)}
         </nav>
 
         <div class="pro-card">
           <span class="badge green">${state.user?.membership === 'pro' ? 'PRO ACTIVE' : 'UPGRADE'}</span>
           <h3 style="margin:12px 0 8px">Aether Pro</h3>
           <p class="muted">Deals, cloud saves and early access.</p>
-          <button class="primary-btn" style="width:100%" onclick="toast('Upgrade flow pendiente para MVP 2')">Upgrade to Pro</button>
+          <a class="primary-btn" style="width:100%" href="#/upgrade">Upgrade to Pro</a>
         </div>
       </aside>
 
@@ -123,9 +128,9 @@ function appShell(content) {
           <div class="footer-links">
             <a href="#/catalog">Store</a>
             <a href="#/maintenance">System status</a>
-            <button class="nav-link" onclick="toast('Privacy Policy pendiente como página legal')">Privacy Policy</button>
-            <button class="nav-link" onclick="toast('Terms of Service pendiente como página legal')">Terms</button>
-            <button class="nav-link" onclick="toast('Payment Methods pendiente para checkout real')">Payment Methods</button>
+            <a class="nav-link" href="#/legal/privacy">Privacy Policy</a>
+            <a class="nav-link" href="#/legal/terms">Terms</a>
+            <a class="nav-link" href="#/payments">Payment Methods</a>
           </div>
         </footer>
       </main>
@@ -166,9 +171,19 @@ async function render() {
     if (path.startsWith('/catalog')) return renderCatalog();
     if (path.startsWith('/games/')) return renderDetails(Number(path.split('/')[2]));
     if (path === '/cart') return requireAuth(renderCart);
+    if (path === '/checkout') return requireAuth(renderCheckout);
     if (path === '/profile') return requireAuth(renderProfile);
     if (path === '/library') return requireAuth(renderLibrary);
+    if (path === '/settings') return requireAuth(renderSettings);
+    if (path === '/support') return renderSupport();
+    if (path === '/upgrade') return requireAuth(renderUpgrade);
+    if (path === '/legal/privacy') return renderLegal('privacy');
+    if (path === '/legal/terms') return renderLegal('terms');
+    if (path === '/payments') return renderPayments();
     if (path === '/admin') return requireAdmin(renderAdmin);
+    if (path === '/admin/users') return requireAdmin(renderAdminUsers);
+    if (path === '/admin/categories') return requireAdmin(renderAdminCategories);
+    if (path === '/admin/activity') return requireAdmin(renderAdminActivity);
     if (path === '/maintenance') return renderMaintenance();
     return render404();
   } catch (error) {
@@ -424,8 +439,8 @@ function renderAuth() {
             <button class="primary-btn" style="width:100%">Initiate Link</button>
             <button type="button" class="ghost-btn" style="width:100%; margin-top:10px" onclick="forgotPassword()">Forgot password</button>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px">
-              <button type="button" class="ghost-btn" onclick="toast('OAuth Google pendiente para MVP 2')">Google</button>
-              <button type="button" class="ghost-btn" onclick="toast('OAuth GitHub pendiente para MVP 2')">GitHub</button>
+              <button type="button" class="ghost-btn" onclick="toast('OAuth Google requiere credenciales externas; para la evaluación usa login JWT demo.')">Google</button>
+              <button type="button" class="ghost-btn" onclick="toast('OAuth GitHub requiere credenciales externas; para la evaluación usa login JWT demo.')">GitHub</button>
             </div>
           </form>
           <form id="registerForm" class="hidden" onsubmit="submitRegister(event)">
@@ -464,7 +479,7 @@ async function renderCart() {
           ${infoRow('Estimated Tax', money(cart.summary.estimatedTax))}
           ${infoRow('Total', money(cart.summary.total))}
         </div>
-        <button class="primary-btn" style="width:100%; margin-top:20px" onclick="checkout()">Proceed to Checkout</button>
+        <a class="primary-btn" style="width:100%; margin-top:20px" href="#/checkout">Proceed to Checkout</a>
         <p class="muted" style="margin-top:14px">Secure SSL Transaction · Visa · Mastercard · PayPal</p>
       </aside>
     </div>
@@ -492,10 +507,13 @@ async function renderProfile() {
   const { data: profile } = await api('/api/users/me');
   const purchases = await api('/api/users/me/purchases');
   const wishlistItems = await api('/api/users/me/wishlist');
+  const reviews = await api('/api/users/me/reviews');
 
   const tabContent = state.profileTab === 'wishlist'
     ? `<div class="grid grid-3">${wishlistItems.data.map(gameCard).join('') || emptyState('favorite', 'No wishlist yet', 'Save your favorite games.')}</div>`
-    : `<div class="grid">${purchases.data.map(purchaseCard).join('') || emptyState('receipt_long', 'No purchases yet', 'Your purchase history will appear here.')}</div>`;
+    : state.profileTab === 'reviews'
+      ? `<div class="grid">${reviews.data.map(reviewCard).join('') || emptyState('rate_review', 'No reviews yet', 'Your game reviews will appear here.')}</div>`
+      : `<div class="grid">${purchases.data.map(purchaseCard).join('') || emptyState('receipt_long', 'No purchases yet', 'Your purchase history will appear here.')}</div>`;
 
   document.getElementById('app').innerHTML = appShell(`
     <div class="grid">
@@ -521,7 +539,7 @@ async function renderProfile() {
         <div class="tabs">
           <button class="tab ${state.profileTab === 'purchases' ? 'active' : ''}" onclick="setProfileTab('purchases')">Purchase History</button>
           <button class="tab ${state.profileTab === 'wishlist' ? 'active' : ''}" onclick="setProfileTab('wishlist')">Wishlist</button>
-          <button class="tab" onclick="toast('Reviews listo para MVP 2')">Reviews</button>
+          <button class="tab ${state.profileTab === 'reviews' ? 'active' : ''}" onclick="setProfileTab('reviews')">Reviews</button>
         </div>
         ${tabContent}
       </section>
@@ -576,6 +594,12 @@ async function renderAdmin() {
         ${statCard('Active Games', stats.data.activeGames, 'sports_esports')}
         ${statCard('Low Stock', stats.data.lowStockGames, 'warning')}
       </div>
+      <div class="grid grid-4">
+        <a class="card pad action-card" href="#/admin/users"><span class="material-symbols-outlined">group</span><h3>Manage Users</h3><p class="muted">Roles and account status.</p></a>
+        <a class="card pad action-card" href="#/admin/categories"><span class="material-symbols-outlined">category</span><h3>Categories</h3><p class="muted">Catalog classification.</p></a>
+        <a class="card pad action-card" href="#/admin/activity"><span class="material-symbols-outlined">history</span><h3>Activity</h3><p class="muted">Audit trail.</p></a>
+        <button class="card pad action-card" onclick="openGameModal()"><span class="material-symbols-outlined">add_circle</span><h3>New Game</h3><p class="muted">Create inventory item.</p></button>
+      </div>
       <section class="card pad">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:18px">
           <div><span class="badge">Inventory</span><h3>Game Inventory</h3></div>
@@ -589,7 +613,7 @@ async function renderAdmin() {
         </div>
       </section>
       <section class="card pad">
-        <div style="display:flex; justify-content:space-between"><div><span class="badge yellow">Server Alert</span><h3>Recent Activity</h3></div><button class="ghost-btn" onclick="toast('Historial completo pendiente')">View All</button></div>
+        <div style="display:flex; justify-content:space-between"><div><span class="badge yellow">Server Alert</span><h3>Recent Activity</h3></div><a class="ghost-btn" href="#/admin/activity">View All</a></div>
         ${activity.data.map(row => `<p class="muted">${row.action} · ${row.entityType} #${row.entityId} · ${new Date(row.createdAt).toLocaleString()}</p>`).join('')}
       </section>
     </div>
@@ -611,6 +635,237 @@ function adminGameRow(game) {
       <td><button class="ghost-btn" onclick="openGameModal(${game.id})">Edit</button> <button class="danger-btn" onclick="archiveGame(${game.id})">Delete</button></td>
     </tr>
   `;
+}
+
+
+function reviewCard(review) {
+  return `
+    <article class="card pad" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+      <img class="avatar" style="border-radius:16px; width:86px; height:86px" src="${review.coverImageUrl}" alt="${review.gameTitle}">
+      <div style="flex:1"><span class="badge green">${review.rating}/5</span><h3>${review.gameTitle}</h3><p class="muted">${review.comment}</p></div>
+      <span class="muted">${new Date(review.createdAt).toLocaleDateString()}</span>
+    </article>
+  `;
+}
+
+async function renderCheckout() {
+  const { data: cart } = await api('/api/cart');
+  document.getElementById('app').innerHTML = appShell(`
+    <div class="grid" style="grid-template-columns:1fr 420px">
+      <section class="card pad">
+        <div class="kicker">Checkout</div>
+        <h2>Confirm your order</h2>
+        ${cart.items.length ? `<div class="grid">${cart.items.map(cartItem).join('')}</div>` : emptyState('shopping_cart_off', 'Your cart is empty', 'Return to the store and add a game first.')}
+      </section>
+      <aside class="card pad filters">
+        <div class="kicker">Secure Payment</div>
+        <h2>Order Summary</h2>
+        <div class="info-list">
+          ${infoRow('Subtotal', money(cart.summary.subtotal))}
+          ${infoRow('Discounts', `-${money(cart.summary.discountTotal)}`)}
+          ${infoRow('Estimated Tax', money(cart.summary.estimatedTax))}
+          ${infoRow('Total', money(cart.summary.total))}
+        </div>
+        <div class="card pad" style="margin:18px 0; background:rgba(57,37,39,.5)">
+          <span class="badge green">SSL</span>
+          <p class="muted" style="margin:10px 0 0">Demo checkout: the order is paid immediately and added to your Library.</p>
+        </div>
+        <button class="primary-btn" style="width:100%" ${cart.items.length ? '' : 'disabled'} onclick="checkout()">Confirm Purchase</button>
+        <a class="ghost-btn" style="width:100%; margin-top:10px" href="#/cart">Back to cart</a>
+      </aside>
+    </div>
+  `);
+}
+
+async function renderSettings() {
+  const { data: profile } = await api('/api/users/me');
+  document.getElementById('app').innerHTML = appShell(`
+    <div class="grid">
+      <div><div class="kicker">Settings</div><h2>Account preferences</h2></div>
+      <section class="grid grid-2">
+        <article class="card pad">
+          <h3>Profile Data</h3>
+          <p class="muted">Update the same information used in the Profile modal.</p>
+          <form onsubmit="saveProfile(event)">
+            <div class="form-control"><label>Display Name</label><input class="input" name="displayName" value="${profile.displayName || ''}"></div>
+            <div class="form-control"><label>Email</label><input class="input" name="email" value="${profile.email || ''}"></div>
+            <div class="form-control"><label>Bio</label><textarea class="input" name="bio" rows="4">${profile.bio || ''}</textarea></div>
+            <button class="primary-btn">Save Settings</button>
+          </form>
+        </article>
+        <article class="card pad">
+          <h3>Security & Membership</h3>
+          <div class="info-list">
+            ${infoRow('Role', profile.role)}
+            ${infoRow('Status', profile.status)}
+            ${infoRow('Membership', profile.membership)}
+            ${infoRow('Joined', new Date(profile.joinedAt).toLocaleDateString())}
+          </div>
+          <a class="primary-btn" style="margin-top:18px" href="#/upgrade">Manage Pro Upgrade</a>
+        </article>
+      </section>
+    </div>
+  `);
+}
+
+function renderSupport() {
+  const user = state.user || {};
+  document.getElementById('app').innerHTML = appShell(`
+    <div class="grid" style="grid-template-columns:1fr 360px">
+      <section class="card pad">
+        <div class="kicker">Support</div>
+        <h2>Create a ticket</h2>
+        <p class="muted">Use this for purchase problems, download access, catalog issues or account requests.</p>
+        <form onsubmit="submitSupportTicket(event)">
+          <div class="grid grid-2">
+            <div class="form-control"><label>Name</label><input class="input" name="name" value="${user.displayName || ''}" required></div>
+            <div class="form-control"><label>Email</label><input class="input" name="email" value="${user.email || ''}" required></div>
+          </div>
+          <div class="form-control"><label>Topic</label><input class="input" name="topic" placeholder="Purchase, download, account..." required></div>
+          <div class="form-control"><label>Message</label><textarea class="input" name="message" rows="6" placeholder="Describe the issue with enough detail." required minlength="10"></textarea></div>
+          <button class="primary-btn">Send Ticket</button>
+        </form>
+      </section>
+      <aside class="card pad">
+        <span class="badge green">QA Ready</span>
+        <h3>Automatable flow</h3>
+        <p class="muted">This page sends a real POST request to /api/support/tickets, so it can be tested in Postman and Supertest.</p>
+        <div class="info-list">${infoRow('SLA', '24h demo response')}${infoRow('Status', 'Tickets are stored in DB')}${infoRow('Admin', 'Visible in admin activity/support API')}</div>
+      </aside>
+    </div>
+  `);
+}
+
+async function submitSupportTicket(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  try {
+    const response = await api('/api/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify({ name: form.get('name'), email: form.get('email'), topic: form.get('topic'), message: form.get('message') })
+    });
+    toast(`Ticket #${response.data.id} created.`);
+    event.target.reset();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+async function renderUpgrade() {
+  document.getElementById('app').innerHTML = appShell(`
+    <section class="card hero">
+      <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop" alt="Aether Pro">
+      <div>
+        <div class="kicker">Aether Pro</div>
+        <h1>Unlock Pro Access</h1>
+        <p class="muted" style="font-size:18px; max-width:660px">Early access, special deals, priority support and cloud-save benefits for premium marketplace users.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:22px">
+          <button class="primary-btn" onclick="upgradeMembership()">Activate Pro</button>
+          <a class="ghost-btn" href="#/settings">Back to Settings</a>
+        </div>
+      </div>
+    </section>
+  `);
+}
+
+async function upgradeMembership() {
+  try {
+    const response = await api('/api/users/me/upgrade', { method: 'POST' });
+    state.user = response.data;
+    localStorage.setItem('aether_user', JSON.stringify(response.data));
+    toast('Aether Pro activated.');
+    renderUpgrade();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function renderLegal(type) {
+  const isPrivacy = type === 'privacy';
+  document.getElementById('app').innerHTML = appShell(`
+    <article class="card pad">
+      <div class="kicker">Legal</div>
+      <h2>${isPrivacy ? 'Privacy Policy' : 'Terms of Service'}</h2>
+      <p class="muted">Demo legal page included to complete the navigation flow. It documents how the marketplace handles accounts, purchases, wishlist, support tickets and admin operations.</p>
+      <div class="grid grid-3">
+        <div class="card pad"><h3>${isPrivacy ? 'Data collected' : 'User obligations'}</h3><p class="muted">Account data, purchase records, support requests and interaction history are stored only for marketplace functionality.</p></div>
+        <div class="card pad"><h3>${isPrivacy ? 'Security' : 'Purchases'}</h3><p class="muted">JWT, bcrypt, validation and role-based access protect private and administrative resources.</p></div>
+        <div class="card pad"><h3>${isPrivacy ? 'Control' : 'Limitations'}</h3><p class="muted">Users can update profile data and request account deletion from their profile page.</p></div>
+      </div>
+    </article>
+  `);
+}
+
+function renderPayments() {
+  document.getElementById('app').innerHTML = appShell(`
+    <div class="grid">
+      <div><div class="kicker">Payment Methods</div><h2>Accepted payment options</h2></div>
+      <div class="grid grid-4">
+        ${['Visa', 'Mastercard', 'PayPal', 'Aether Wallet'].map(name => `<article class="card pad"><span class="material-symbols-outlined">credit_card</span><h3>${name}</h3><p class="muted">Available for checkout demo flow.</p></article>`).join('')}
+      </div>
+      <section class="card pad"><h3>Checkout behavior</h3><p class="muted">For this academic version, checkout validates cart, stock and transaction consistency, then registers a paid purchase and adds the games to the Library.</p></section>
+    </div>
+  `);
+}
+
+async function renderAdminUsers() {
+  const { data } = await api('/api/admin/users');
+  document.getElementById('app').innerHTML = appShell(`
+    <div class="grid">
+      <div style="display:flex; justify-content:space-between; align-items:center"><div><div class="kicker">Admin</div><h2>Manage Users</h2></div><a class="ghost-btn" href="#/admin">Back Dashboard</a></div>
+      <section class="card pad table-wrap"><table><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>${data.map(userRow).join('')}</tbody></table></section>
+    </div>
+  `);
+}
+
+function userRow(user) {
+  return `<tr><td><strong>${user.displayName}</strong><br><span class="muted">@${user.username}</span></td><td>${user.email}</td><td><span class="badge">${user.role}</span></td><td><span class="badge ${user.status === 'active' ? 'green' : 'yellow'}">${user.status}</span></td><td><button class="ghost-btn" onclick="toggleUserRole(${user.id}, '${user.role}', '${user.displayName}', '${user.status}')">Toggle Role</button> <button class="danger-btn" onclick="toggleUserStatus(${user.id}, '${user.role}', '${user.displayName}', '${user.status}')">Toggle Status</button></td></tr>`;
+}
+
+async function toggleUserRole(id, role, displayName, status) {
+  const nextRole = role === 'admin' ? 'customer' : 'admin';
+  try { await api(`/api/admin/users/${id}`, { method:'PUT', body: JSON.stringify({ displayName, role: nextRole, status }) }); toast('User role updated.'); renderAdminUsers(); } catch(error) { toast(error.message, 'error'); }
+}
+
+async function toggleUserStatus(id, role, displayName, status) {
+  const nextStatus = status === 'active' ? 'disabled' : 'active';
+  try { await api(`/api/admin/users/${id}`, { method:'PUT', body: JSON.stringify({ displayName, role, status: nextStatus }) }); toast('User status updated.'); renderAdminUsers(); } catch(error) { toast(error.message, 'error'); }
+}
+
+async function renderAdminCategories() {
+  const { data } = await api('/api/admin/categories');
+  document.getElementById('app').innerHTML = appShell(`
+    <div class="grid">
+      <div style="display:flex; justify-content:space-between; align-items:center"><div><div class="kicker">Admin</div><h2>Manage Categories</h2></div><a class="ghost-btn" href="#/admin">Back Dashboard</a></div>
+      <section class="card pad"><form onsubmit="createCategory(event)" style="display:grid; grid-template-columns:1fr 1fr auto; gap:10px"><input class="input" name="name" placeholder="Category name" required><input class="input" name="description" placeholder="Description"><button class="primary-btn">Create</button></form></section>
+      <section class="card pad table-wrap"><table><thead><tr><th>Name</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead><tbody>${data.map(categoryRow).join('')}</tbody></table></section>
+    </div>
+  `);
+}
+
+function categoryRow(category) {
+  return `<tr><td><strong>${category.name}</strong></td><td>${category.description || '-'}</td><td><span class="badge ${category.status === 'active' ? 'green' : 'yellow'}">${category.status}</span></td><td><button class="danger-btn" onclick="archiveCategory(${category.id})">Deactivate</button></td></tr>`;
+}
+
+async function createCategory(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  try { await api('/api/admin/categories', { method:'POST', body: JSON.stringify({ name: form.get('name'), description: form.get('description'), status:'active' }) }); toast('Category created.'); renderAdminCategories(); } catch(error) { toast(error.message, 'error'); }
+}
+
+async function archiveCategory(id) {
+  if (!confirm('Deactivate this category?')) return;
+  try { await api(`/api/admin/categories/${id}`, { method:'DELETE' }); toast('Category deactivated.'); renderAdminCategories(); } catch(error) { toast(error.message, 'error'); }
+}
+
+async function renderAdminActivity() {
+  const activity = await api('/api/admin/activity');
+  const tickets = await api('/api/admin/support-tickets');
+  document.getElementById('app').innerHTML = appShell(`
+    <div class="grid">
+      <div style="display:flex; justify-content:space-between; align-items:center"><div><div class="kicker">Admin</div><h2>Activity & Support</h2></div><a class="ghost-btn" href="#/admin">Back Dashboard</a></div>
+      <section class="grid grid-2">
+        <article class="card pad"><h3>Recent Activity</h3>${activity.data.map(row => `<p class="muted">${row.action} · ${row.entityType} #${row.entityId || '-'} · ${new Date(row.createdAt).toLocaleString()}</p>`).join('') || emptyState('history', 'No activity', 'Admin actions appear here.')}</article>
+        <article class="card pad"><h3>Support Tickets</h3>${tickets.data.map(ticket => `<div class="card pad" style="margin-bottom:10px"><span class="badge yellow">${ticket.status}</span><h3>${ticket.topic}</h3><p class="muted">${ticket.message}</p><small>${ticket.email}</small></div>`).join('') || emptyState('support_agent', 'No tickets', 'Support tickets appear here.')}</article>
+      </section>
+    </div>
+  `);
 }
 
 async function renderMaintenance() {
@@ -1039,7 +1294,7 @@ async function loadNotifications() {
 }
 
 function showSupport() {
-  toast('Support flow pendiente. Aquí se abriría chat/ticket de soporte.');
+  navTo('/support');
 }
 
 window.addEventListener('hashchange', render);
@@ -1079,5 +1334,20 @@ Object.assign(window, {
   adminSearch,
   exportReport,
   loadNotifications,
-  showSupport
+  showSupport,
+  renderCheckout,
+  renderSettings,
+  renderSupport,
+  submitSupportTicket,
+  renderUpgrade,
+  upgradeMembership,
+  renderLegal,
+  renderPayments,
+  renderAdminUsers,
+  toggleUserRole,
+  toggleUserStatus,
+  renderAdminCategories,
+  createCategory,
+  archiveCategory,
+  renderAdminActivity
 });

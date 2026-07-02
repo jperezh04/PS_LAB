@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Producto.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pruebas Unitarias con JUnit 5</a> &gt; <a href="index.source.html" class="el_package">com.lab04</a> &gt; <span class="el_source">Producto.java</span></div><h1>Producto.java</h1><pre class="source lang-java linenums">package com.lab04;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class Producto {
+
+    private final String codigo;
+    private final String nombre;
+    private double precio;
+    private int cantidad;
+    private final List&lt;Movimiento&gt; movimientos;
+
+<span class="fc" id="L15">    public Producto(String codigo, String nombre, double precio, int cantidad) {</span>
+<span class="fc" id="L16">        validarCodigo(codigo);</span>
+<span class="fc" id="L17">        validarNombre(nombre);</span>
+<span class="fc" id="L18">        validarPrecio(precio);</span>
+<span class="fc" id="L19">        validarCantidadInicial(cantidad);</span>
+
+<span class="fc" id="L21">        this.codigo = codigo;</span>
+<span class="fc" id="L22">        this.nombre = nombre;</span>
+<span class="fc" id="L23">        this.precio = precio;</span>
+<span class="fc" id="L24">        this.cantidad = cantidad;</span>
+<span class="fc" id="L25">        this.movimientos = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L26">    }</span>
+
+    public void agregarStock(int cantidad) {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (cantidad &lt;= 0) {</span>
+<span class="fc" id="L30">            throw new IllegalArgumentException(&quot;La cantidad a agregar debe ser positiva&quot;);</span>
+        }
+
+<span class="fc" id="L33">        this.cantidad += cantidad;</span>
+<span class="fc" id="L34">        movimientos.add(new Movimiento(TipoMovimiento.ENTRADA, cantidad));</span>
+<span class="fc" id="L35">    }</span>
+
+    public void extraerStock(int cantidad) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (cantidad &lt;= 0) {</span>
+<span class="fc" id="L39">            throw new IllegalArgumentException(&quot;La cantidad a extraer debe ser positiva&quot;);</span>
+        }
+
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (cantidad &gt; this.cantidad) {</span>
+<span class="fc" id="L43">            throw new IllegalArgumentException(&quot;No hay stock suficiente para realizar la salida&quot;);</span>
+        }
+
+<span class="fc" id="L46">        this.cantidad -= cantidad;</span>
+<span class="fc" id="L47">        movimientos.add(new Movimiento(TipoMovimiento.SALIDA, cantidad));</span>
+<span class="fc" id="L48">    }</span>
+
+    public int consultarStock() {
+<span class="fc" id="L51">        return cantidad;</span>
+    }
+
+    public double obtenerValorTotal() {
+<span class="fc" id="L55">        return precio * cantidad;</span>
+    }
+
+    public String getCodigo() {
+<span class="fc" id="L59">        return codigo;</span>
+    }
+
+    public String getNombre() {
+<span class="fc" id="L63">        return nombre;</span>
+    }
+
+    public double getPrecio() {
+<span class="fc" id="L67">        return precio;</span>
+    }
+
+    public List&lt;Movimiento&gt; getMovimientos() {
+<span class="fc" id="L71">        return Collections.unmodifiableList(movimientos);</span>
+    }
+
+    private void validarCodigo(String codigo) {
+<span class="fc bfc" id="L75" title="All 4 branches covered.">        if (codigo == null || codigo.trim().isEmpty()) {</span>
+<span class="fc" id="L76">            throw new IllegalArgumentException(&quot;El código del producto no puede estar vacío&quot;);</span>
+        }
+<span class="fc" id="L78">    }</span>
+
+    private void validarNombre(String nombre) {
+<span class="fc bfc" id="L81" title="All 4 branches covered.">        if (nombre == null || nombre.trim().isEmpty()) {</span>
+<span class="fc" id="L82">            throw new IllegalArgumentException(&quot;El nombre del producto no puede estar vacío&quot;);</span>
+        }
+<span class="fc" id="L84">    }</span>
+
+    private void validarPrecio(double precio) {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (precio &lt;= 0) {</span>
+<span class="fc" id="L88">            throw new IllegalArgumentException(&quot;El precio del producto debe ser positivo&quot;);</span>
+        }
+<span class="fc" id="L90">    }</span>
+
+    private void validarCantidadInicial(int cantidad) {
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (cantidad &lt; 0) {</span>
+<span class="fc" id="L94">            throw new IllegalArgumentException(&quot;La cantidad inicial no puede ser negativa&quot;);</span>
+        }
+<span class="fc" id="L96">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

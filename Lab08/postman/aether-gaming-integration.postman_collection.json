@@ -1,0 +1,381 @@
+{
+  "info": {
+    "name": "Aether Gaming - Integration Flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "customerToken",
+      "value": ""
+    },
+    {
+      "key": "gameId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"admin@aether.dev\", \"password\": \"Admin1234\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login admin 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('adminToken', json.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Create Game",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/games",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Postman Integration Game",
+              "type": "text"
+            },
+            {
+              "key": "shortDescription",
+              "value": "Created from Postman integration flow.",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "This game validates POST to GET persistence with a dynamic id.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "19.99",
+              "type": "text"
+            },
+            {
+              "key": "stock",
+              "value": "9",
+              "type": "text"
+            },
+            {
+              "key": "developer",
+              "value": "QA Studio",
+              "type": "text"
+            },
+            {
+              "key": "publisher",
+              "value": "Aether QA",
+              "type": "text"
+            },
+            {
+              "key": "releaseDate",
+              "value": "2026-07-01",
+              "type": "text"
+            },
+            {
+              "key": "status",
+              "value": "active",
+              "type": "text"
+            },
+            {
+              "key": "esrbRating",
+              "value": "T",
+              "type": "text"
+            },
+            {
+              "key": "genreIds",
+              "value": "1,2",
+              "type": "text"
+            },
+            {
+              "key": "platformIds",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "coverImage",
+              "type": "file",
+              "src": "tests/fixtures/cover.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Created 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.expect(json.data.id).to.exist;",
+              "pm.collectionVariables.set('gameId', json.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Read Created Game",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/games/{{gameId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Read 200', () => pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().data.title).to.eql('Postman Integration Game');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Update Game Stock",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/games/{{gameId}}",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Postman Integration Game",
+              "type": "text"
+            },
+            {
+              "key": "shortDescription",
+              "value": "Created from Postman integration flow.",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "This game validates PUT update persistence.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "19.99",
+              "type": "text"
+            },
+            {
+              "key": "stock",
+              "value": "5",
+              "type": "text"
+            },
+            {
+              "key": "developer",
+              "value": "QA Studio",
+              "type": "text"
+            },
+            {
+              "key": "publisher",
+              "value": "Aether QA",
+              "type": "text"
+            },
+            {
+              "key": "releaseDate",
+              "value": "2026-07-01",
+              "type": "text"
+            },
+            {
+              "key": "status",
+              "value": "active",
+              "type": "text"
+            },
+            {
+              "key": "esrbRating",
+              "value": "T",
+              "type": "text"
+            },
+            {
+              "key": "genreIds",
+              "value": "1,2",
+              "type": "text"
+            },
+            {
+              "key": "platformIds",
+              "value": "1",
+              "type": "text"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Updated 200', () => pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().data.stock).to.eql(5);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Delete Archive Game",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/games/{{gameId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Archived 200', () => pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().data.status).to.eql('archived');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Edge Case Invalid Price",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/games",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Invalid Price Game",
+              "type": "text"
+            },
+            {
+              "key": "shortDescription",
+              "value": "Invalid price validation.",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "This request should fail because price is not numeric.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "abc",
+              "type": "text"
+            },
+            {
+              "key": "stock",
+              "value": "5",
+              "type": "text"
+            },
+            {
+              "key": "developer",
+              "value": "QA Studio",
+              "type": "text"
+            },
+            {
+              "key": "publisher",
+              "value": "Aether QA",
+              "type": "text"
+            },
+            {
+              "key": "releaseDate",
+              "value": "2026-07-01",
+              "type": "text"
+            },
+            {
+              "key": "status",
+              "value": "active",
+              "type": "text"
+            },
+            {
+              "key": "esrbRating",
+              "value": "T",
+              "type": "text"
+            },
+            {
+              "key": "genreIds",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "platformIds",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "coverImage",
+              "type": "file",
+              "src": "tests/fixtures/cover.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Validation 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

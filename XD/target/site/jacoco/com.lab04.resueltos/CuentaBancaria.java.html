@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CuentaBancaria.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pruebas Unitarias con JUnit 5</a> &gt; <a href="index.source.html" class="el_package">com.lab04.resueltos</a> &gt; <span class="el_source">CuentaBancaria.java</span></div><h1>CuentaBancaria.java</h1><pre class="source lang-java linenums">package com.lab04.resueltos;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Representa una transacción bancaria.
+ */
+class Transaccion {
+<span class="nc" id="L11">    public enum Tipo { DEPOSITO, RETIRO }</span>
+    
+    private Tipo tipo;
+    private double monto;
+    private LocalDateTime fecha;
+    
+<span class="nc" id="L17">    public Transaccion(Tipo tipo, double monto) {</span>
+<span class="nc" id="L18">        this.tipo = tipo;</span>
+<span class="nc" id="L19">        this.monto = monto;</span>
+<span class="nc" id="L20">        this.fecha = LocalDateTime.now();</span>
+<span class="nc" id="L21">    }</span>
+    
+<span class="nc" id="L23">    public Tipo getTipo() { return tipo; }</span>
+<span class="nc" id="L24">    public double getMonto() { return monto; }</span>
+<span class="nc" id="L25">    public LocalDateTime getFecha() { return fecha; }</span>
+}
+
+/**
+ * Gestiona una cuenta bancaria con operaciones y transacciones.
+ */
+public class CuentaBancaria {
+    private String numero;
+    private String titular;
+    private double saldo;
+    private List&lt;Transaccion&gt; transacciones;
+    
+<span class="nc" id="L37">    public CuentaBancaria(String numero, String titular, double saldoInicial) {</span>
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        if (numero == null || numero.isEmpty()) {</span>
+<span class="nc" id="L39">            throw new IllegalArgumentException(&quot;Número de cuenta no válido&quot;);</span>
+        }
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (saldoInicial &lt; 0) {</span>
+<span class="nc" id="L42">            throw new IllegalArgumentException(&quot;Saldo inicial no puede ser negativo&quot;);</span>
+        }
+        
+<span class="nc" id="L45">        this.numero = numero;</span>
+<span class="nc" id="L46">        this.titular = titular;</span>
+<span class="nc" id="L47">        this.saldo = saldoInicial;</span>
+<span class="nc" id="L48">        this.transacciones = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L49">    }</span>
+    
+    public void depositar(double monto) {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (monto &lt;= 0) {</span>
+<span class="nc" id="L53">            throw new IllegalArgumentException(&quot;Monto debe ser positivo&quot;);</span>
+        }
+        
+<span class="nc" id="L56">        this.saldo += monto;</span>
+<span class="nc" id="L57">        transacciones.add(new Transaccion(Transaccion.Tipo.DEPOSITO, monto));</span>
+<span class="nc" id="L58">    }</span>
+    
+    public void retirar(double monto) {
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        if (monto &lt;= 0) {</span>
+<span class="nc" id="L62">            throw new IllegalArgumentException(&quot;Monto debe ser positivo&quot;);</span>
+        }
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (monto &gt; saldo) {</span>
+<span class="nc" id="L65">            throw new IllegalArgumentException(&quot;Saldo insuficiente&quot;);</span>
+        }
+        
+<span class="nc" id="L68">        this.saldo -= monto;</span>
+<span class="nc" id="L69">        transacciones.add(new Transaccion(Transaccion.Tipo.RETIRO, monto));</span>
+<span class="nc" id="L70">    }</span>
+    
+    public double obtenerSaldo() {
+<span class="nc" id="L73">        return saldo;</span>
+    }
+    
+<span class="nc" id="L76">    public String getNumero() { return numero; }</span>
+<span class="nc" id="L77">    public String getTitular() { return titular; }</span>
+<span class="nc" id="L78">    public List&lt;Transaccion&gt; getTransacciones() { return transacciones; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
