@@ -6,7 +6,9 @@ import morgan from 'morgan';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import multer from 'multer';
 import {
   users,
   games,
@@ -29,15 +31,72 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+const uploadDir = path.join(__dirname, 'public', 'uploads', 'covers');
+fs.mkdirSync(uploadDir, { recursive: true });
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '2h';
+
+const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const coverStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) => {
+    const rawName = path.parse(file.originalname).name || 'cover';
+    const safeName = rawName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 60) || 'cover';
+    const extensionByMime = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/webp': '.webp'
+    };
+    cb(null, `${Date.now()}-${safeName}${extensionByMime[file.mimetype]}`);
+  }
+});
+
+const uploadCover = multer({
+  storage: coverStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!allowedImageTypes.has(file.mimetype)) {
+      return cb(new Error('Cover image must be JPG, PNG or WEBP.'));
+    }
+    cb(null, true);
+  }
+});
+
+function uploadSingleCover(req, res, next) {
+  uploadCover.single('coverImage')(req, res, error => {
+    if (!error) return next();
+    const message = error.code === 'LIMIT_FILE_SIZE'
+      ? 'Cover image must not exceed 5MB.'
+      : error.message;
+    return res.status(422).json({
+      message: 'Validation error',
+      errors: [{ field: 'coverImage', message }]
+    });
+  });
+}
+
+function uploadedCoverUrl(req) {
+  return req.file ? `/uploads/covers/${req.file.filename}` : null;
+}
+
+function parseIdList(value, fallback = []) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const rawValues = Array.isArray(value) ? value : String(value).split(',');
+  const parsed = rawValues.map(item => Number(item)).filter(Number.isInteger);
+  return parsed.length ? parsed : fallback;
+}
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 50 });
 app.use('/api/auth', authLimiter);
@@ -544,7 +603,7 @@ app.get('/api/admin/games', authRequired, adminOnly, (req, res) => {
   res.json({ data: filtered.map(game => gameView(game, req.user.id)) });
 });
 
-app.post('/api/admin/games', authRequired, adminOnly, (req, res) => {
+app.post('/api/admin/games', authRequired, adminOnly, uploadSingleCover, (req, res) => {
   const errors = assertRequired(req.body, ['title', 'shortDescription', 'description', 'price', 'stock', 'developer', 'publisher', 'releaseDate', 'esrbRating', 'status']);
   const price = Number(req.body.price);
   const stock = Number(req.body.stock);
@@ -574,9 +633,9 @@ app.post('/api/admin/games', authRequired, adminOnly, (req, res) => {
     rating: Number(req.body.rating || 0),
     reviewsCount: 0,
     categoryId: Number(req.body.categoryId || 1),
-    genreIds: req.body.genreIds?.length ? req.body.genreIds.map(Number) : [1],
-    platformIds: req.body.platformIds?.length ? req.body.platformIds.map(Number) : [1],
-    coverImageUrl: req.body.coverImageUrl || 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=1200&auto=format&fit=crop',
+    genreIds: parseIdList(req.body.genreIds, [1]),
+    platformIds: parseIdList(req.body.platformIds, [1]),
+    coverImageUrl: uploadedCoverUrl(req) || req.body.coverImageUrl || 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=1200&auto=format&fit=crop',
     media: [],
     features: [],
     systemRequirements: {}
@@ -587,16 +646,19 @@ app.post('/api/admin/games', authRequired, adminOnly, (req, res) => {
   res.status(201).json({ message: 'Game created.', data: gameView(game, req.user.id) });
 });
 
-app.put('/api/admin/games/:id', authRequired, adminOnly, (req, res) => {
+app.put('/api/admin/games/:id', authRequired, adminOnly, uploadSingleCover, (req, res) => {
   const game = games.find(item => item.id === Number(req.params.id));
   if (!game) return res.status(404).json({ message: 'Game not found.' });
+
+  const uploadedUrl = uploadedCoverUrl(req);
+  if (uploadedUrl) game.coverImageUrl = uploadedUrl;
 
   const editable = ['title', 'shortDescription', 'description', 'price', 'discountPrice', 'stock', 'developer', 'publisher', 'releaseDate', 'esrbRating', 'status', 'commercialBadge', 'rating', 'coverImageUrl'];
   for (const key of editable) {
     if (req.body[key] !== undefined) game[key] = ['price', 'discountPrice', 'rating'].includes(key) ? Number(req.body[key]) : req.body[key];
   }
-  if (req.body.genreIds) game.genreIds = req.body.genreIds.map(Number);
-  if (req.body.platformIds) game.platformIds = req.body.platformIds.map(Number);
+  if (req.body.genreIds) game.genreIds = parseIdList(req.body.genreIds, game.genreIds);
+  if (req.body.platformIds) game.platformIds = parseIdList(req.body.platformIds, game.platformIds);
 
   adminActivity.unshift({ id: nextId(adminActivity), adminId: req.user.id, action: 'Updated game', entityType: 'game', entityId: game.id, createdAt: new Date().toISOString() });
   res.json({ message: 'Game updated.', data: gameView(game, req.user.id) });

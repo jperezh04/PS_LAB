@@ -40,7 +40,8 @@ function toast(message, type = 'info') {
 }
 
 async function api(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const isFormData = options.body instanceof FormData;
+  const headers = isFormData ? { ...(options.headers || {}) } : { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
 
   const response = await fetch(path, { ...options, headers });
@@ -602,7 +603,7 @@ function statCard(label, value, icon) {
 function adminGameRow(game) {
   return `
     <tr>
-      <td><strong>${game.title}</strong><br><span class="muted">${game.developer}</span></td>
+      <td><div class="table-game"><img src="${game.coverImageUrl}" alt="${game.title}"><div><strong>${game.title}</strong><br><span class="muted">${game.developer}</span></div></div></td>
       <td><span class="badge ${game.status === 'active' ? 'green' : 'yellow'}">${game.status}</span></td>
       <td>${money(game.finalPrice)}</td>
       <td>${game.stock}</td>
@@ -903,8 +904,14 @@ function closeModal() {
   document.getElementById('modalBackdrop')?.remove();
 }
 
+function optionSelected(currentValue, optionValue) {
+  return currentValue === optionValue ? 'selected' : '';
+}
+
 function openGameModal(gameId = null) {
   const game = state.adminGames.find(item => item.id === gameId) || null;
+  const coverPreview = game?.coverImageUrl || 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=1200&auto=format&fit=crop';
+
   document.body.insertAdjacentHTML('beforeend', `
     <div class="modal-backdrop" id="modalBackdrop">
       <div class="card pad modal">
@@ -912,23 +919,42 @@ function openGameModal(gameId = null) {
           <div><span class="badge">Admin</span><h2>${game ? 'Edit Game' : 'Add New Game'}</h2></div>
           <button class="icon-btn" onclick="closeModal()"><span class="material-symbols-outlined">close</span></button>
         </div>
-        <form onsubmit="saveGame(event, ${gameId || 'null'})">
-          <div class="form-control"><label>Title</label><input class="input" name="title" value="${game?.title || ''}" required></div>
-          <div class="form-control"><label>Short Description</label><input class="input" name="shortDescription" value="${game?.shortDescription || ''}" required></div>
-          <div class="form-control"><label>Description</label><textarea class="input" name="description" rows="3" required>${game?.description || ''}</textarea></div>
+        <form onsubmit="saveGame(event, ${gameId || 'null'})" enctype="multipart/form-data">
+          <div class="cover-upload">
+            <img id="coverPreview" src="${coverPreview}" alt="Game cover preview">
+            <div>
+              <label class="cover-picker">
+                <span class="material-symbols-outlined">upload</span>
+                Choose cover image
+                <input name="coverImage" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewCover(event)">
+              </label>
+              <p class="muted" style="margin:10px 0 0">JPG, PNG o WEBP. Máximo 5MB. Si editas y no eliges archivo, se conserva la portada actual.</p>
+            </div>
+          </div>
+
+          <div class="form-control"><label>Title</label><input class="input" name="title" value="${game?.title || ''}" required minlength="2" maxlength="150"></div>
+          <div class="form-control"><label>Short Description</label><input class="input" name="shortDescription" value="${game?.shortDescription || ''}" required minlength="10" maxlength="300"></div>
+          <div class="form-control"><label>Description</label><textarea class="input" name="description" rows="3" required minlength="10" maxlength="5000">${game?.description || ''}</textarea></div>
           <div class="grid grid-2">
-            <div class="form-control"><label>Price</label><input class="input" name="price" type="number" step="0.01" value="${game?.price || 49.99}" required></div>
-            <div class="form-control"><label>Stock</label><input class="input" name="stock" type="number" value="${game?.stock ?? 10}" required></div>
+            <div class="form-control"><label>Price</label><input class="input" name="price" type="number" step="0.01" min="0" value="${game?.price || 49.99}" required></div>
+            <div class="form-control"><label>Stock</label><input class="input" name="stock" type="number" min="0" step="1" value="${game?.stock ?? 10}" required></div>
           </div>
           <div class="grid grid-2">
-            <div class="form-control"><label>Developer</label><input class="input" name="developer" value="${game?.developer || 'Demo Studio'}" required></div>
-            <div class="form-control"><label>Publisher</label><input class="input" name="publisher" value="${game?.publisher || 'Aether Interactive'}" required></div>
+            <div class="form-control"><label>Developer</label><input class="input" name="developer" value="${game?.developer || 'Demo Studio'}" required minlength="2" maxlength="120"></div>
+            <div class="form-control"><label>Publisher</label><input class="input" name="publisher" value="${game?.publisher || 'Aether Interactive'}" required minlength="2" maxlength="120"></div>
           </div>
           <div class="grid grid-2">
             <div class="form-control"><label>Release Date</label><input class="input" name="releaseDate" type="date" value="${game?.releaseDate || '2026-07-01'}" required></div>
-            <div class="form-control"><label>Status</label><select name="status"><option value="active">active</option><option value="beta">beta</option><option value="draft">draft</option><option value="inactive">inactive</option></select></div>
+            <div class="form-control"><label>Status</label><select name="status">
+              <option value="active" ${optionSelected(game?.status || 'active', 'active')}>active</option>
+              <option value="beta" ${optionSelected(game?.status, 'beta')}>beta</option>
+              <option value="draft" ${optionSelected(game?.status, 'draft')}>draft</option>
+              <option value="inactive" ${optionSelected(game?.status, 'inactive')}>inactive</option>
+            </select></div>
           </div>
-          <input type="hidden" name="esrbRating" value="T">
+          <input type="hidden" name="esrbRating" value="${game?.esrbRating || 'T'}">
+          <input type="hidden" name="genreIds" value="${game?.genreIds?.join(',') || '1,2'}">
+          <input type="hidden" name="platformIds" value="${game?.platformIds?.join(',') || '1'}">
           <div style="display:flex; gap:10px; justify-content:flex-end"><button type="button" class="ghost-btn" onclick="closeModal()">Cancel</button><button class="primary-btn">Save Game</button></div>
         </form>
       </div>
@@ -936,20 +962,33 @@ function openGameModal(gameId = null) {
   `);
 }
 
+function previewCover(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    event.target.value = '';
+    return toast('La portada debe ser JPG, PNG o WEBP.', 'error');
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    event.target.value = '';
+    return toast('La portada no debe superar los 5MB.', 'error');
+  }
+
+  document.getElementById('coverPreview').src = URL.createObjectURL(file);
+}
+
 async function saveGame(event, gameId) {
   event.preventDefault();
-  const form = new FormData(event.target);
-  const payload = Object.fromEntries(form.entries());
-  payload.price = Number(payload.price);
-  payload.stock = Number(payload.stock);
-  payload.genreIds = [1, 2];
-  payload.platformIds = [1];
+  const formData = new FormData(event.target);
 
   try {
-    if (gameId) await api(`/api/admin/games/${gameId}`, { method: 'PUT', body: JSON.stringify(payload) });
-    else await api('/api/admin/games', { method: 'POST', body: JSON.stringify(payload) });
+    if (gameId) await api(`/api/admin/games/${gameId}`, { method: 'PUT', body: formData });
+    else await api('/api/admin/games', { method: 'POST', body: formData });
     closeModal();
-    toast(gameId ? 'Game updated.' : 'Game created.');
+    toast(gameId ? 'Game updated with cover.' : 'Game created with cover.');
     renderAdmin();
   } catch (error) {
     toast(error.message, 'error');
@@ -1034,6 +1073,7 @@ Object.assign(window, {
   requestDeleteAccount,
   closeModal,
   openGameModal,
+  previewCover,
   saveGame,
   archiveGame,
   adminSearch,

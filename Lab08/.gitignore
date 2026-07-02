@@ -1,9 +1,5 @@
 # Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
 # Environment variables
 .env
@@ -12,60 +8,33 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 
-# Build / dist
-dist/
-build/
-.next/
-out/
-
 # Logs
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
+# Runtime / uploads
+public/uploads/
+uploads/
+tmp/
+temp/
 
-# Coverage
+# Build / coverage
+build/
+dist/
 coverage/
 .nyc_output/
-
-# Cache
-.cache/
-.parcel-cache/
-.vite/
-.eslintcache
-
-# Uploads / user files
-uploads/
-public/uploads/
+reports/
 
 # Database local files
 *.sqlite
 *.sqlite3
 *.db
 
-# OS files
+# OS / IDE
 .DS_Store
 Thumbs.db
-
-# IDE / Editor
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# Temporary files
-tmp/
-temp/
-
-# ZIPs / backups
-*.zip
-*.rar
-*.7z
-*.bak
-
-# Generated reports
-reports/
