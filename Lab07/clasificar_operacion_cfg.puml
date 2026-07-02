@@ -1,0 +1,76 @@
+@startuml atm_validacion_pin
+
+title Diagrama de flujo - Validación de tarjeta y PIN en ATM
+
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #EAF3FF
+  BorderColor #1E5AA8
+  FontColor #111111
+  FontSize 14
+  DiamondBackgroundColor #FFF4D6
+  DiamondBorderColor #D89000
+  StartColor #0B4F9C
+  EndColor #0B4F9C
+}
+skinparam ArrowColor #1E5AA8
+skinparam ArrowFontColor #111111
+
+start
+
+:Esperar inserción de tarjeta;
+:Leer datos de la tarjeta;
+
+if (¿Tarjeta válida?) then (Sí)
+
+  :Solicitar / ingresar PIN;
+
+  if (¿Cuenta bloqueada?) then (Sí)
+    :Mostrar "Cuenta bloqueada";
+
+  else (No)
+
+    if (¿Cuenta cancelada?) then (Sí)
+      :Mostrar "Cuenta cancelada";
+
+    else (No)
+
+      if (¿Intentos fallidos >= 3?) then (Sí)
+        :Cambiar estado de cuenta a "bloqueada";
+        :Mostrar "Cuenta bloqueada";
+
+      else (No)
+
+        if (¿PIN ingresado == PIN de la cuenta?) then (Sí)
+          :Reiniciar intentos_fallidos = 0;
+          :Acceso aprobado;
+          :Mostrar menú de transacciones;
+
+        else (No)
+          :Incrementar intentos_fallidos += 1;
+
+          if (¿Intentos fallidos >= 3?) then (Sí)
+            :Cambiar estado de cuenta a "bloqueada";
+            :Mostrar "Cuenta bloqueada";
+
+          else (No)
+            :Mostrar "PIN incorrecto";
+            :Permitir nuevo intento;
+          endif
+
+        endif
+
+      endif
+
+    endif
+
+  endif
+
+else (No)
+  :Rechazar tarjeta;
+endif
+
+:Fin del proceso;
+stop
+
+@enduml

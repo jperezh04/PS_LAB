@@ -1,0 +1,60 @@
+@startuml flujo_general_atm
+title Flujo general del sistema ATM
+
+start
+
+:Usuario selecciona tipo de transacción;
+:Ingresa cuenta, monto y PIN;
+
+if (tipo == "consulta"?) then (Sí)
+  :consultar_saldo();
+  :Validar PIN;
+  if (PIN correcto?) then (Sí)
+    :Mostrar saldo;
+    :Estado aprobado;
+  else (No)
+    :Estado rechazado;
+  endif
+
+elseif (tipo == "retiro"?) then (Sí)
+  :retirar();
+  :Validar cuenta;
+  :Validar PIN;
+  :Validar monto;
+  :Calcular comisión;
+  if (Saldo suficiente?) then (Sí)
+    :Descontar monto + comisión;
+    :Estado aprobado;
+  else (No)
+    :Estado rechazado;
+  endif
+
+elseif (tipo == "deposito"?) then (Sí)
+  :depositar();
+  :Validar cuenta;
+  :Validar monto;
+  :Aumentar saldo;
+  :Estado aprobado;
+
+elseif (tipo == "transferencia"?) then (Sí)
+  :transferir();
+  :Validar cuenta origen;
+  :Validar cuenta destino;
+  :Validar PIN;
+  :Validar monto;
+  :Calcular comisión;
+  if (Saldo suficiente?) then (Sí)
+    :Descontar saldo origen;
+    :Aumentar saldo destino;
+    :Estado aprobado;
+  else (No)
+    :Estado rechazado;
+  endif
+
+else (No)
+  :Tipo de transacción inválido;
+  :Estado rechazado;
+endif
+
+stop
+@enduml

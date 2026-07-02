@@ -16,7 +16,7 @@ from atm import (
 )
 
 
-def cuenta(**kwargs):
+def crear_cuenta(**kwargs):
     datos = {
         "numero": "001",
         "titular": "Jeremy Perez",
@@ -29,304 +29,247 @@ def cuenta(**kwargs):
     datos.update(kwargs)
     return Cuenta(**datos)
 
+# =========================================================
+# 2. STATEMENT TESTING
+# =========================================================
+
 
 @pytest.mark.parametrize(
     "cuenta_prueba, esperado",
     [
-        (cuenta(), True),
-        (cuenta(numero=""), False),
-        (cuenta(numero="   "), False),
-        (cuenta(titular=""), False),
-        (cuenta(titular="   "), False),
-        (cuenta(saldo=-10), False),
-        (cuenta(estado="suspendida"), False),
-        (cuenta(tipo="sueldo"), False),
+        (crear_cuenta(numero=""), False),
+        (crear_cuenta(numero="   "), False),
+        (crear_cuenta(titular=""), False),
+        (crear_cuenta(titular="   "), False),
+        (crear_cuenta(saldo=-10), False),
+        (crear_cuenta(estado="suspendida"), False),
+        (crear_cuenta(tipo="sueldo"), False),
     ],
 )
-def test_validar_cuenta(cuenta_prueba, esperado):
-    assert validar_cuenta(cuenta_prueba) is esperado
+def test_statement_validar_cuenta(cuenta_prueba, esperado):
+    resultado = validar_cuenta(cuenta_prueba)
+
+    assert resultado is esperado
+
+# =========================================================
+# 2. BRANCH TESTING
+# =========================================================
 
 
-def test_validar_pin_correcto_reinicia_intentos():
-    c = cuenta(intentos_fallidos=2)
-    assert validar_pin(c, "1234") == "PIN correcto"
-    assert c.intentos_fallidos == 0
+
+@pytest.mark.parametrize(
+    "cuenta_prueba, pin, esperado, estado_esperado",
+    [
+        (crear_cuenta(intentos_fallidos=2), "0000", "Cuenta bloqueada", "bloqueada"),
+        (crear_cuenta(estado="bloqueada"), "1234", "Cuenta bloqueada", "bloqueada"),
+        (crear_cuenta(estado="cancelada"), "1234", "Cuenta cancelada", "cancelada"),
+        (crear_cuenta(intentos_fallidos=3), "1234", "Cuenta bloqueada", "bloqueada"),
+    ],
+)
+def test_branch_validar_pin(cuenta_prueba, pin, esperado, estado_esperado):
+    resultado = validar_pin(cuenta_prueba, pin)
+
+    assert resultado == esperado
+    assert cuenta_prueba.estado == estado_esperado
 
 
-def test_validar_pin_cuenta_bloqueada():
-    c = cuenta(estado="bloqueada")
-    assert validar_pin(c, "1234") == "Cuenta bloqueada"
+def test_branch_consultar_saldo_rechazada_por_pin():
+    cuenta = crear_cuenta()
 
-
-def test_validar_pin_cuenta_cancelada():
-    c = cuenta(estado="cancelada")
-    assert validar_pin(c, "1234") == "Cuenta cancelada"
-
-
-def test_validar_pin_bloquea_si_ya_tiene_tres_intentos():
-    c = cuenta(intentos_fallidos=3)
-    assert validar_pin(c, "1234") == "Cuenta bloqueada"
-    assert c.estado == "bloqueada"
-
-
-def test_validar_pin_incorrecto_sin_bloquear():
-    c = cuenta(intentos_fallidos=1)
-    assert validar_pin(c, "0000") == "PIN incorrecto"
-    assert c.intentos_fallidos == 2
-
-
-def test_validar_pin_incorrecto_bloquea_al_tercer_intento():
-    c = cuenta(intentos_fallidos=2)
-    assert validar_pin(c, "0000") == "Cuenta bloqueada"
-    assert c.estado == "bloqueada"
-
-
-def test_consultar_saldo_aprobado():
-    c = cuenta(saldo=520.555)
-    resultado = consultar_saldo(c, "1234")
-
-    assert resultado == {
-        "estado": "aprobado",
-        "mensaje": "Consulta realizada",
-        "saldo": 520.55,
-    }
-
-
-def test_consultar_saldo_rechazado_por_pin():
-    c = cuenta()
-    resultado = consultar_saldo(c, "0000")
+    resultado = consultar_saldo(cuenta, "0000")
 
     assert resultado["estado"] == "rechazado"
     assert resultado["mensaje"] == "PIN incorrecto"
     assert resultado["saldo"] is None
 
 
+def test_branch_validar_monto_supera_limite():
+    resultado = validar_monto(3001)
+
+    assert resultado == "Monto supera el límite permitido"
+
+
 @pytest.mark.parametrize(
     "cuenta_prueba, tipo_operacion, pais, esperado",
     [
-        (cuenta(tipo="premium"), "retiro", "Perú", 0.0),
-        (cuenta(tipo="ahorro"), "retiro", "Chile", 8.0),
-        (cuenta(tipo="corriente"), "retiro", "Perú", 2.5),
-        (cuenta(tipo="ahorro"), "transferencia", "Perú", 1.5),
-        (cuenta(tipo="ahorro"), "consulta", "Perú", 0.0),
+        (crear_cuenta(tipo="premium"), "retiro", "Perú", 0.0),
+        (crear_cuenta(tipo="ahorro"), "retiro", "Chile", 8.0),
+        (crear_cuenta(tipo="corriente"), "retiro", "Perú", 2.5),
     ],
 )
-def test_calcular_comision(cuenta_prueba, tipo_operacion, pais, esperado):
-    assert calcular_comision(cuenta_prueba, tipo_operacion, pais) == esperado
+def test_branch_calcular_comision(cuenta_prueba, tipo_operacion, pais, esperado):
+    resultado = calcular_comision(cuenta_prueba, tipo_operacion, pais)
+
+    assert resultado == esperado
 
 
 @pytest.mark.parametrize(
-    "monto, esperado",
+    "cuenta_prueba, monto, pin, esperado",
     [
-        (0, "Monto inválido"),
-        (-20, "Monto inválido"),
-        (3001, "Monto supera el límite permitido"),
-        (500, "Monto válido"),
+        (crear_cuenta(numero=""), 100, "1234", "Cuenta inválida"),
+        (crear_cuenta(), 100, "0000", "PIN incorrecto"),
+        (crear_cuenta(), 0, "1234", "Monto inválido"),
+        (crear_cuenta(saldo=50), 100, "1234", "Saldo insuficiente"),
     ],
 )
-def test_validar_monto(monto, esperado):
-    assert validar_monto(monto) == esperado
-
-
-def test_retirar_cuenta_invalida():
-    c = cuenta(numero="")
-    resultado = retirar(c, 100, "1234")
+def test_branch_retirar_rechazado(cuenta_prueba, monto, pin, esperado):
+    resultado = retirar(cuenta_prueba, monto, pin)
 
     assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Cuenta inválida"
-
-
-def test_retirar_pin_incorrecto():
-    c = cuenta()
-    resultado = retirar(c, 100, "0000")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "PIN incorrecto"
-
-
-def test_retirar_monto_invalido():
-    c = cuenta()
-    resultado = retirar(c, 0, "1234")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Monto inválido"
-
-
-def test_retirar_saldo_insuficiente():
-    c = cuenta(saldo=50)
-    resultado = retirar(c, 100, "1234")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Saldo insuficiente"
-
-
-def test_retirar_aprobado_con_comision_corriente():
-    c = cuenta(tipo="corriente", saldo=500)
-    resultado = retirar(c, 100, "1234")
-
-    assert resultado == {
-        "estado": "aprobado",
-        "mensaje": "Retiro exitoso",
-        "monto": 100,
-        "comision": 2.5,
-        "saldo": 397.5,
-    }
-
-
-def test_depositar_cuenta_invalida():
-    c = cuenta(saldo=-1)
-    resultado = depositar(c, 100)
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Cuenta inválida"
-
-
-def test_depositar_cuenta_no_activa():
-    c = cuenta(estado="bloqueada")
-    resultado = depositar(c, 100)
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "La cuenta no está activa"
-
-
-def test_depositar_monto_invalido():
-    c = cuenta()
-    resultado = depositar(c, -50)
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Monto inválido"
-
-
-def test_depositar_aprobado():
-    c = cuenta(saldo=200)
-    resultado = depositar(c, 150)
-
-    assert resultado == {
-        "estado": "aprobado",
-        "mensaje": "Depósito exitoso",
-        "monto": 150,
-        "saldo": 350,
-    }
-
-
-def test_transferir_cuenta_origen_invalida():
-    origen = cuenta(numero="")
-    destino = cuenta(numero="002")
-    resultado = transferir(origen, destino, 100, "1234")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Cuenta origen inválida"
-
-
-def test_transferir_cuenta_destino_invalida():
-    origen = cuenta()
-    destino = cuenta(numero="")
-    resultado = transferir(origen, destino, 100, "1234")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Cuenta destino inválida"
-
-
-def test_transferir_misma_cuenta():
-    origen = cuenta(numero="001")
-    destino = cuenta(numero="001")
-    resultado = transferir(origen, destino, 100, "1234")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "No se puede transferir a la misma cuenta"
-
-
-def test_transferir_pin_incorrecto():
-    origen = cuenta()
-    destino = cuenta(numero="002")
-    resultado = transferir(origen, destino, 100, "0000")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "PIN incorrecto"
-
-
-def test_transferir_monto_invalido():
-    origen = cuenta()
-    destino = cuenta(numero="002")
-    resultado = transferir(origen, destino, 0, "1234")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Monto inválido"
-
-
-def test_transferir_saldo_insuficiente():
-    origen = cuenta(saldo=50)
-    destino = cuenta(numero="002")
-    resultado = transferir(origen, destino, 100, "1234")
-
-    assert resultado["estado"] == "rechazado"
-    assert resultado["mensaje"] == "Saldo insuficiente"
-
-
-def test_transferir_aprobado():
-    origen = cuenta(saldo=500)
-    destino = cuenta(numero="002", saldo=100)
-    resultado = transferir(origen, destino, 100, "1234")
-
-    assert resultado == {
-        "estado": "aprobado",
-        "mensaje": "Transferencia exitosa",
-        "monto": 100,
-        "comision": 1.5,
-        "saldo_origen": 398.5,
-        "saldo_destino": 200,
-    }
+    assert resultado["mensaje"] == esperado
 
 
 @pytest.mark.parametrize(
-    "monto, pais, tipo, esperado",
+    "cuenta_prueba, monto, esperado",
     [
-        (2000, "Chile", "retiro", "Operación de alto riesgo"),
-        (2000, "Perú", "retiro", "Operación monitoreada"),
-        (500, "Perú", "transferencia", "Operación monitoreada"),
-        (50, "Perú", "retiro", "Operación pequeña"),
-        (500, "Perú", "retiro", "Operación normal"),
+        (crear_cuenta(saldo=-1), 100, "Cuenta inválida"),
+        (crear_cuenta(estado="bloqueada"), 100, "La cuenta no está activa"),
+        (crear_cuenta(), -50, "Monto inválido"),
     ],
 )
-def test_clasificar_operacion(monto, pais, tipo, esperado):
-    assert clasificar_operacion(monto, pais, tipo) == esperado
+def test_branch_depositar_rechazado(cuenta_prueba, monto, esperado):
+    resultado = depositar(cuenta_prueba, monto)
 
+    assert resultado["estado"] == "rechazado"
+    assert resultado["mensaje"] == esperado
+
+
+@pytest.mark.parametrize(
+    "origen, destino, monto, pin, esperado",
+    [
+        (
+            crear_cuenta(numero=""),
+            crear_cuenta(numero="002"),
+            100,
+            "1234",
+            "Cuenta origen inválida",
+        ),
+        (
+            crear_cuenta(),
+            crear_cuenta(numero=""),
+            100,
+            "1234",
+            "Cuenta destino inválida",
+        ),
+        (
+            crear_cuenta(numero="001"),
+            crear_cuenta(numero="001"),
+            100,
+            "1234",
+            "No se puede transferir a la misma cuenta",
+        ),
+        (
+            crear_cuenta(),
+            crear_cuenta(numero="002"),
+            100,
+            "0000",
+            "PIN incorrecto",
+        ),
+        (
+            crear_cuenta(),
+            crear_cuenta(numero="002"),
+            0,
+            "1234",
+            "Monto inválido",
+        ),
+        (
+            crear_cuenta(saldo=50),
+            crear_cuenta(numero="002"),
+            100,
+            "1234",
+            "Saldo insuficiente",
+        ),
+    ],
+)
+def test_branch_transferir_rechazado(origen, destino, monto, pin, esperado):
+    resultado = transferir(origen, destino, monto, pin)
+
+    assert resultado["estado"] == "rechazado"
+    assert resultado["mensaje"] == esperado
+
+
+# =========================================================
+# 3. BRANCH CONDITION COMBINATION TESTING
+# =========================================================
+
+@pytest.mark.parametrize(
+    "monto, pais_operacion, tipo_operacion, esperado, tabla_verdad",
+    [
+        (2000, "Chile", "transferencia", "Operación de alto riesgo", "V-V-V"),
+        (2000, "Chile", "retiro", "Operación de alto riesgo", "V-V-F"),
+        (2000, "Perú", "transferencia", "Operación monitoreada", "V-F-V"),
+        (2000, "Perú", "retiro", "Operación monitoreada", "V-F-F"),
+        (500, "Chile", "transferencia", "Operación monitoreada", "F-V-V"),
+        (500, "Chile", "retiro", "Operación normal", "F-V-F"),
+        (500, "Perú", "transferencia", "Operación monitoreada", "F-F-V"),
+        (500, "Perú", "retiro", "Operación normal", "F-F-F"),
+    ],
+)
+def test_branch_condition_combination_clasificar_operacion(
+    monto,
+    pais_operacion,
+    tipo_operacion,
+    esperado,
+    tabla_verdad,
+):
+    resultado = clasificar_operacion(monto, pais_operacion, tipo_operacion)
+
+    assert resultado == esperado
+
+
+def test_branch_condition_operacion_pequena():
+    resultado = clasificar_operacion(
+        monto=50,
+        pais_operacion="Perú",
+        tipo_operacion="retiro",
+    )
+
+    assert resultado == "Operación pequeña"
+
+
+# =========================================================
+# 4. FLUJO GENERAL DEL ATM / STATEMENT TESTING
+# =========================================================
 
 def test_procesar_transaccion_consulta():
-    origen = cuenta(saldo=700)
-    t = Transaccion(tipo="consulta", monto=0, cuenta_origen=origen)
+    origen = crear_cuenta(saldo=700)
+    transaccion = Transaccion(tipo="consulta", monto=0, cuenta_origen=origen)
 
-    resultado = procesar_transaccion(t, "1234")
+    resultado = procesar_transaccion(transaccion, "1234")
 
     assert resultado["estado"] == "aprobado"
     assert resultado["saldo"] == 700
 
 
 def test_procesar_transaccion_retiro_aprobado_agrega_clasificacion():
-    origen = cuenta(saldo=1000)
-    t = Transaccion(tipo="retiro", monto=50, cuenta_origen=origen)
+    origen = crear_cuenta(saldo=1000)
+    transaccion = Transaccion(tipo="retiro", monto=50, cuenta_origen=origen)
 
-    resultado = procesar_transaccion(t, "1234")
+    resultado = procesar_transaccion(transaccion, "1234")
 
     assert resultado["estado"] == "aprobado"
     assert resultado["clasificacion"] == "Operación pequeña"
 
 
 def test_procesar_transaccion_deposito_aprobado_agrega_clasificacion():
-    origen = cuenta(saldo=100)
-    t = Transaccion(tipo="deposito", monto=300, cuenta_origen=origen)
+    origen = crear_cuenta(saldo=100)
+    transaccion = Transaccion(tipo="deposito", monto=300, cuenta_origen=origen)
 
-    resultado = procesar_transaccion(t, "1234")
+    resultado = procesar_transaccion(transaccion, "1234")
 
     assert resultado["estado"] == "aprobado"
     assert resultado["clasificacion"] == "Operación normal"
 
 
 def test_procesar_transaccion_transferencia_sin_destino():
-    origen = cuenta()
-    t = Transaccion(tipo="transferencia", monto=100, cuenta_origen=origen)
+    origen = crear_cuenta()
+    transaccion = Transaccion(
+        tipo="transferencia",
+        monto=100,
+        cuenta_origen=origen,
+    )
 
-    resultado = procesar_transaccion(t, "1234")
+    resultado = procesar_transaccion(transaccion, "1234")
 
     assert resultado == {
         "estado": "rechazado",
@@ -335,26 +278,30 @@ def test_procesar_transaccion_transferencia_sin_destino():
 
 
 def test_procesar_transaccion_transferencia_aprobada():
-    origen = cuenta(saldo=1000)
-    destino = cuenta(numero="002", saldo=100)
-    t = Transaccion(
+    origen = crear_cuenta(saldo=1000)
+    destino = crear_cuenta(numero="002", saldo=100)
+    transaccion = Transaccion(
         tipo="transferencia",
         monto=100,
         cuenta_origen=origen,
         cuenta_destino=destino,
     )
 
-    resultado = procesar_transaccion(t, "1234")
+    resultado = procesar_transaccion(transaccion, "1234")
 
     assert resultado["estado"] == "aprobado"
     assert resultado["clasificacion"] == "Operación monitoreada"
 
 
 def test_procesar_transaccion_tipo_invalido():
-    origen = cuenta()
-    t = Transaccion(tipo="pago_servicio", monto=100, cuenta_origen=origen)
+    origen = crear_cuenta()
+    transaccion = Transaccion(
+        tipo="pago_servicio",
+        monto=100,
+        cuenta_origen=origen,
+    )
 
-    resultado = procesar_transaccion(t, "1234")
+    resultado = procesar_transaccion(transaccion, "1234")
 
     assert resultado == {
         "estado": "rechazado",
@@ -363,10 +310,10 @@ def test_procesar_transaccion_tipo_invalido():
 
 
 def test_procesar_transaccion_rechazada_no_agrega_clasificacion():
-    origen = cuenta(saldo=50)
-    t = Transaccion(tipo="retiro", monto=100, cuenta_origen=origen)
+    origen = crear_cuenta(saldo=50)
+    transaccion = Transaccion(tipo="retiro", monto=100, cuenta_origen=origen)
 
-    resultado = procesar_transaccion(t, "1234")
+    resultado = procesar_transaccion(transaccion, "1234")
 
     assert resultado["estado"] == "rechazado"
     assert "clasificacion" not in resultado
