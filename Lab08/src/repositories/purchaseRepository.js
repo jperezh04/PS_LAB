@@ -4,7 +4,7 @@ export function createPurchaseRepository(db) {
       const now = new Date().toISOString();
       const purchaseId = db.insert('INSERT INTO purchases (user_id, subtotal, discount_total, tax_total, total, status, purchased_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [
         userId, summary.subtotal, summary.discountTotal, summary.estimatedTax, summary.total, 'paid', now
-      ]);
+      ], { persist: false });
       for (const item of items) {
         db.run('INSERT INTO purchase_items (purchase_id, game_id, title_snapshot, quantity, unit_price, subtotal) VALUES (?, ?, ?, ?, ?, ?)', [
           purchaseId, item.game.id, item.game.title, item.quantity, item.discountPrice ?? item.unitPrice, item.subtotal

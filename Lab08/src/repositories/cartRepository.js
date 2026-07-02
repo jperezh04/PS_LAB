@@ -45,7 +45,7 @@ export function createCartRepository(db) {
       db.run('UPDATE carts SET status = ? WHERE id = ?', ['checked_out', cartId], { persist: false });
     },
     createActiveCart(userId) {
-      return db.insert('INSERT INTO carts (user_id, status, promo_code) VALUES (?, ?, ?)', [userId, 'active', null]);
+      return db.insert('INSERT INTO carts (user_id, status, promo_code) VALUES (?, ?, ?)', [userId, 'active', null], { persist: false });
     },
     findPromo(code) {
       return db.get('SELECT id, code, type, value, status, max_uses AS maxUses, current_uses AS currentUses, starts_at AS startsAt, expires_at AS expiresAt FROM promo_codes WHERE upper(code) = upper(?)', [code]);

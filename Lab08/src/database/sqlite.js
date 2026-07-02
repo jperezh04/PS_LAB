@@ -54,10 +54,10 @@ export class SqlDatabase {
     return { changes };
   }
 
-  insert(sql, params = []) {
+  insert(sql, params = [], { persist = true } = {}) {
     this.run(sql, params, { persist: false });
     const row = this.get('SELECT last_insert_rowid() AS id');
-    this.persist();
+    if (persist) this.persist();
     return Number(row.id);
   }
 
