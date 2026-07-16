@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block page_id %}galeria{% endblock %}
+{% block content %}
+<section class="page-head"><div><p class="eyebrow">Recursos</p><h2 class="page-title">Galería de imágenes</h2><p class="page-copy">Portadas y diseños de entrada guardados localmente en el proyecto.</p></div><a href="{{ url_for('admin_new_concert') }}" class="btn btn-primary"><span class="material-symbols-outlined">add_photo_alternate</span>Agregar recurso</a></section>
+<section class="panel filter-bar"><label class="search-field rounded-xl"><span class="material-symbols-outlined">search</span><input id="gallery-search" type="search" placeholder="Artista, tour o archivo"></label><select id="gallery-type" class="select"><option value="">Todos los tipos</option><option value="portada">Portadas</option><option value="entrada">Entradas</option></select><select id="gallery-concert" class="select"><option value="">Todos los conciertos</option></select><div class="flex items-center rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-muted"><span class="material-symbols-outlined mr-2 text-primary">folder</span>static/uploads</div></section>
+<div id="gallery-count" class="mt-4 text-sm text-muted"></div><section id="gallery-grid" class="gallery-grid mt-4"></section><div id="gallery-empty" class="panel empty-state mt-4 hidden"><div><span class="empty-icon material-symbols-outlined mx-auto">hide_image</span><h3 class="mt-4 font-display text-xl font-bold">No hay recursos</h3><p class="mt-2 text-sm text-muted">Sube imágenes desde el formulario de un concierto.</p></div></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/galeria.js') }}"></script>{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block page_id %}venta-formulario{% endblock %}
+{% block content %}
+<section class="page-head"><div><p class="eyebrow">Taquilla</p><h2 class="page-title">Registrar una venta</h2><p class="page-copy">Selecciona un concierto, valida el stock y confirma el pago.</p></div><a href="{{ url_for('admin_sales') }}" class="btn btn-ghost"><span class="material-symbols-outlined">history</span>Historial</a></section>
+<div class="grid gap-4 xl:grid-cols-[1fr_.7fr]">
+  <form id="sale-form" class="panel" novalidate>
+    <section class="form-section"><div class="mb-5"><p class="eyebrow">Concierto</p><h3 class="form-section-title">Selecciona el evento</h3></div>
+      <label class="label" for="concierto_id">Concierto *</label><select id="concierto_id" name="concierto_id" class="select" required><option value="">Cargando conciertos...</option></select><div id="selected-concert" class="mt-4"></div>
+    </section>
+    <section class="form-section"><div class="mb-5"><p class="eyebrow">Comprador</p><h3 class="form-section-title">Datos de la venta</h3></div>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div><label class="label" for="comprador">Nombre completo *</label><input id="comprador" name="comprador" class="input" required placeholder="Andrea López"></div>
+        <div><label class="label" for="correo">Correo electrónico *</label><input id="correo" name="correo" class="input" type="email" required placeholder="andrea@example.com"></div>
+        <div><label class="label" for="cantidad">Cantidad *</label><input id="cantidad" name="cantidad" class="input" type="number" min="1" step="1" value="1" required></div>
+        <div><label class="label" for="metodo_pago">Método de pago *</label><select id="metodo_pago" name="metodo_pago" class="select"><option>Tarjeta</option><option>Transferencia</option><option>Efectivo</option><option>Yape</option><option>Plin</option></select></div>
+        <div class="md:col-span-2"><label class="label" for="observaciones">Observaciones</label><textarea id="observaciones" name="observaciones" class="textarea" rows="3" placeholder="Dato opcional para la venta"></textarea></div>
+      </div>
+    </section>
+    <div class="flex justify-end border-t border-white/10 p-5"><button id="submit-sale" type="submit" class="btn btn-primary"><span class="material-symbols-outlined">payments</span>Confirmar venta</button></div>
+  </form>
+  <aside class="panel h-fit xl:sticky xl:top-28"><div class="panel-header"><div><p class="eyebrow">Resumen</p><h3 class="font-display text-lg font-bold">Detalle del cobro</h3></div></div><div class="panel-body space-y-4"><div class="flex justify-between text-sm"><span class="text-muted">Precio unitario</span><strong id="unit-price">S/ 0.00</strong></div><div class="flex justify-between text-sm"><span class="text-muted">Cantidad</span><strong id="sale-quantity">1</strong></div><div class="h-px bg-white/10"></div><div class="flex items-end justify-between"><span class="font-semibold">Total</span><strong id="sale-total" class="font-display text-3xl text-primary">S/ 0.00</strong></div><div id="stock-warning" class="hidden rounded-xl border border-red-300/20 bg-red-400/10 p-3 text-sm text-danger"></div></div></aside>
+</div>
+<dialog id="sale-success-dialog" class="dialog-card"><div class="p-6"><div class="dialog-icon !bg-tertiary !text-[#003640]"><span class="material-symbols-outlined">check_circle</span></div><h2 class="mt-4 font-display text-2xl font-bold">Venta registrada correctamente</h2><div id="sale-success-content" class="mt-4 rounded-xl bg-white/5 p-4 text-sm"></div><div class="mt-6 flex flex-wrap justify-end gap-3"><button id="another-sale" class="btn btn-ghost">Registrar otra</button><a id="view-ticket" class="btn btn-primary" href="#">Ver entrada</a></div></div></dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/ventas.js') }}"></script>{% endblock %}

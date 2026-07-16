@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block page_id %}conciertos{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div><p class="eyebrow">Programación</p><h2 class="page-title">Catálogo de conciertos</h2><p class="page-copy">Gestiona fechas, precios, stock e imágenes promocionales.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('admin_new_concert') }}"><span class="material-symbols-outlined">add</span>Nuevo concierto</a>
+</section>
+<section class="panel filter-bar" aria-label="Filtros de conciertos">
+  <label class="search-field rounded-xl"><span class="material-symbols-outlined">search</span><input id="concert-search" type="search" placeholder="Artista, tour o recinto"></label>
+  <select id="city-filter" class="select" aria-label="Filtrar por ciudad"><option value="">Todas las ciudades</option></select>
+  <select id="status-filter" class="select" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="disponible">Disponible</option><option value="disponibilidad_media">Disponibilidad media</option><option value="pocas_entradas">Pocas entradas</option><option value="agotado">Agotado</option><option value="finalizado">Finalizado</option></select>
+  <select id="sort-filter" class="select" aria-label="Ordenar conciertos"><option value="fecha">Fecha más próxima</option><option value="precio_asc">Menor precio</option><option value="precio_desc">Mayor precio</option><option value="artista">Artista</option></select>
+</section>
+<div id="concert-result-count" class="mt-4 text-sm text-muted"></div>
+<section id="concert-grid" class="concert-grid mt-4" aria-live="polite">
+  {% for i in range(6) %}<article class="panel overflow-hidden"><div class="skeleton aspect-[16/10]"></div><div class="p-5"><div class="skeleton h-5 w-1/2 rounded"></div><div class="skeleton mt-3 h-7 w-3/4 rounded"></div><div class="skeleton mt-6 h-10 rounded"></div></div></article>{% endfor %}
+</section>
+<div id="concert-empty" class="panel empty-state mt-4 hidden"><div><span class="empty-icon material-symbols-outlined mx-auto">event_busy</span><h3 class="mt-4 font-display text-xl font-bold">No encontramos conciertos</h3><p class="mt-2 text-sm text-muted">Cambia los filtros o registra un nuevo evento.</p><a href="{{ url_for('admin_new_concert') }}" class="btn btn-primary mt-5">Crear concierto</a></div></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/conciertos.js') }}"></script>{% endblock %}

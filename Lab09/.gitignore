@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Herramientas del editor
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# SQLite local
+# La BD se genera automáticamente desde app.py al iniciar.
+entradas.db
+entradas.db-shm
+entradas.db-wal
+
+# IMPORTANTE: static/uploads NO se ignora.
+# Las portadas y diseños de entradas se versionan en Git.

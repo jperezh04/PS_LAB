@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block page_id %}concierto-formulario{% endblock %}
+{% block content %}
+<section class="page-head"><div><p class="eyebrow">Gestión de eventos</p><h2 class="page-title">{{ 'Editar concierto' if concert_id else 'Registrar concierto' }}</h2><p class="page-copy">Completa los datos principales y añade recursos visuales del tour.</p></div><a href="{{ url_for('admin_concerts') }}" class="btn btn-ghost"><span class="material-symbols-outlined">arrow_back</span>Volver</a></section>
+<form id="concert-form" class="panel" data-concert-id="{{ concert_id or '' }}" novalidate>
+  <div id="form-errors" class="hidden border-b border-red-300/20 bg-red-400/10 p-4 text-sm text-danger"></div>
+  <section class="form-section"><div class="mb-5"><p class="eyebrow">Paso 1</p><h3 class="form-section-title">Información principal</h3></div>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div><label class="label" for="artista">Artista *</label><input class="input" id="artista" name="artista" required maxlength="100" placeholder="Imagine Dragons"></div>
+      <div><label class="label" for="tour">Nombre del tour *</label><input class="input" id="tour" name="tour" required maxlength="120" placeholder="Loom World Tour"></div>
+      <div><label class="label" for="fecha">Fecha y hora *</label><input class="input" id="fecha" name="fecha" type="datetime-local" required></div>
+      <div><label class="label" for="recinto">Recinto *</label><input class="input" id="recinto" name="recinto" required maxlength="120" placeholder="Estadio Nacional"></div>
+      <div><label class="label" for="ciudad">Ciudad *</label><input class="input" id="ciudad" name="ciudad" required maxlength="80" value="Lima"></div>
+      <div><label class="label" for="precio">Precio (S/) *</label><input class="input" id="precio" name="precio" type="number" min="0.01" step="0.01" required placeholder="280.00"></div>
+      <div><label class="label" for="stock_inicial">Stock inicial *</label><input class="input" id="stock_inicial" name="stock_inicial" type="number" min="0" step="1" required placeholder="800"></div>
+      <div><label class="label" for="stock_disponible">Stock disponible</label><input class="input" id="stock_disponible" name="stock_disponible" type="number" min="0" step="1" placeholder="Se igualará al stock inicial"><p class="help">Al crear el concierto puede dejarse vacío.</p></div>
+    </div>
+  </section>
+  <section class="form-section"><div class="mb-5"><p class="eyebrow">Paso 2</p><h3 class="form-section-title">Recursos visuales</h3><p class="help">JPG, JPEG, PNG o WEBP. Máximo 5 MB por archivo.</p></div>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <label class="upload-zone" id="portada-zone"><img id="portada-preview" class="hidden" alt="Vista previa de la portada"><span class="upload-zone-content"><span class="material-symbols-outlined text-4xl text-primary">add_photo_alternate</span><strong class="mt-2 block">Portada del tour</strong><span id="portada-name" class="mt-1 block text-xs text-muted">Arrastra o selecciona una imagen</span><input id="portada" name="portada" type="file" accept=".jpg,.jpeg,.png,.webp" class="sr-only"></span></label>
+      <label class="upload-zone" id="entrada-zone"><img id="entrada-preview" class="hidden" alt="Vista previa del diseño de entrada"><span class="upload-zone-content"><span class="material-symbols-outlined text-4xl text-secondary">confirmation_number</span><strong class="mt-2 block">Diseño de entrada</strong><span id="entrada-name" class="mt-1 block text-xs text-muted">Arrastra o selecciona una imagen</span><input id="entrada" name="entrada" type="file" accept=".jpg,.jpeg,.png,.webp" class="sr-only"></span></label>
+    </div>
+  </section>
+  <div class="flex flex-wrap justify-end gap-3 border-t border-white/10 p-5"><button id="clear-form" type="button" class="btn btn-ghost">Limpiar</button><a href="{{ url_for('admin_concerts') }}" class="btn btn-ghost">Cancelar</a><button id="save-concert" class="btn btn-primary" type="submit"><span class="material-symbols-outlined">save</span>Guardar concierto</button></div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/conciertos.js') }}"></script>{% endblock %}

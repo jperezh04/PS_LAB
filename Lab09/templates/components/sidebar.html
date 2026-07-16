@@ -1,0 +1,26 @@
+<aside id="sidebar" class="sidebar" aria-label="Navegación principal">
+  <div class="flex h-full flex-col">
+    <a href="{{ url_for('admin_dashboard') }}" class="brand" aria-label="LivePass, ir al dashboard">
+      <span class="brand-icon material-symbols-outlined">bolt</span>
+      <span><strong>Live</strong>Pass</span>
+    </a>
+
+    <nav class="mt-8 flex flex-1 flex-col gap-2">
+      <a class="nav-link {{ 'active' if active == 'dashboard' else '' }}" href="{{ url_for('admin_dashboard') }}"><span class="material-symbols-outlined">space_dashboard</span>Dashboard</a>
+      <a class="nav-link {{ 'active' if active == 'conciertos' else '' }}" href="{{ url_for('admin_concerts') }}"><span class="material-symbols-outlined">event</span>Conciertos</a>
+      <a class="nav-link {{ 'active' if active == 'nuevo_concierto' else '' }}" href="{{ url_for('admin_new_concert') }}"><span class="material-symbols-outlined">add_box</span>Registrar concierto</a>
+      <a class="nav-link {{ 'active' if active == 'ventas' else '' }}" href="{{ url_for('admin_sales') }}"><span class="material-symbols-outlined">receipt_long</span>Ventas</a>
+      <a class="nav-link {{ 'active' if active == 'nueva_venta' else '' }}" href="{{ url_for('admin_new_sale') }}"><span class="material-symbols-outlined">confirmation_number</span>Nueva venta</a>
+      <a class="nav-link {{ 'active' if active == 'galeria' else '' }}" href="{{ url_for('admin_gallery') }}"><span class="material-symbols-outlined">photo_library</span>Galería</a>
+    </nav>
+
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <div class="flex items-center gap-3">
+        <div class="avatar">AD</div>
+        <div class="min-w-0"><p class="truncate text-sm font-semibold">Administrador</p><p class="truncate text-xs text-muted">LivePass local</p></div>
+      </div>
+      <p class="mt-3 text-xs leading-5 text-muted">Las imágenes cargadas se guardan en <code>static/uploads</code> para versionarlas con Git.</p>
+    </div>
+  </div>
+</aside>
+<div id="sidebar-backdrop" class="sidebar-backdrop lg:hidden"></div>

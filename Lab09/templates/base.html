@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="LivePass, sistema administrativo de venta de entradas para conciertos">
+  <title>{{ title }} | LivePass</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/utilities.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-surface text-ink font-body" data-page="{% block page_id %}{% endblock %}">
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  {% include 'components/sidebar.html' %}
+
+  <div class="min-h-screen lg:pl-72">
+    {% include 'components/topbar.html' %}
+    <main id="main-content" class="relative z-10 px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <nav class="mobile-nav lg:hidden" aria-label="Navegación móvil">
+    <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if active == 'dashboard' else '' }}"><span class="material-symbols-outlined">space_dashboard</span><small>Inicio</small></a>
+    <a href="{{ url_for('admin_concerts') }}" class="{{ 'active' if active == 'conciertos' else '' }}"><span class="material-symbols-outlined">event</span><small>Conciertos</small></a>
+    <a href="{{ url_for('admin_new_sale') }}" class="mobile-nav-main {{ 'active' if active == 'nueva_venta' else '' }}"><span class="material-symbols-outlined">confirmation_number</span><small>Vender</small></a>
+    <a href="{{ url_for('admin_sales') }}" class="{{ 'active' if active == 'ventas' else '' }}"><span class="material-symbols-outlined">receipt_long</span><small>Ventas</small></a>
+    <a href="{{ url_for('admin_gallery') }}" class="{{ 'active' if active == 'galeria' else '' }}"><span class="material-symbols-outlined">photo_library</span><small>Galería</small></a>
+  </nav>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <dialog id="confirm-dialog" class="dialog-card">
+    <form method="dialog" class="p-6">
+      <div class="dialog-icon"><span class="material-symbols-outlined">warning</span></div>
+      <h2 id="confirm-title" class="mt-4 font-display text-xl font-bold">Confirmar acción</h2>
+      <p id="confirm-message" class="mt-2 text-sm text-muted">¿Deseas continuar?</p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button value="cancel" class="btn btn-ghost">Cancelar</button>
+        <button id="confirm-accept" value="default" class="btn btn-danger">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

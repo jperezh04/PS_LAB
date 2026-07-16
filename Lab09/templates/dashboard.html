@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block page_id %}dashboard{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div><p class="eyebrow">Electric Nocturne</p><h2 class="page-title">Control total de tus eventos</h2><p class="page-copy">Revisa ventas, disponibilidad y próximos conciertos desde un solo lugar.</p></div>
+  <div class="flex flex-wrap gap-3"><a class="btn btn-ghost" href="{{ url_for('admin_new_concert') }}"><span class="material-symbols-outlined">add_box</span>Nuevo concierto</a><a class="btn btn-primary" href="{{ url_for('admin_new_sale') }}"><span class="material-symbols-outlined">confirmation_number</span>Registrar venta</a></div>
+</section>
+
+<section id="stats-grid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores principales">
+  {% for i in range(4) %}<article class="panel stat-card"><div class="skeleton h-11 w-11 rounded-xl"></div><div class="skeleton mt-5 h-8 w-28 rounded"></div><div class="skeleton mt-3 h-4 w-40 rounded"></div></article>{% endfor %}
+</section>
+
+<section class="mt-4 grid gap-4 xl:grid-cols-[1.45fr_.8fr]">
+  <article class="panel"><div class="panel-header"><div><p class="eyebrow">Rendimiento</p><h3 class="font-display text-lg font-bold">Entradas vendidas por concierto</h3></div><a href="{{ url_for('admin_sales') }}" class="btn btn-ghost btn-sm">Ver ventas</a></div><div id="sales-chart" class="panel-body min-h-72"></div></article>
+  <article class="panel"><div class="panel-header"><div><p class="eyebrow">Atención</p><h3 class="font-display text-lg font-bold">Stock bajo</h3></div></div><div id="low-stock-list" class="panel-body space-y-3"></div></article>
+</section>
+
+<section class="mt-4 grid gap-4 xl:grid-cols-2">
+  <article class="panel"><div class="panel-header"><div><p class="eyebrow">Agenda</p><h3 class="font-display text-lg font-bold">Próximos conciertos</h3></div><a href="{{ url_for('admin_concerts') }}" class="btn btn-ghost btn-sm">Ver todos</a></div><div id="upcoming-list" class="panel-body space-y-3"></div></article>
+  <article class="panel"><div class="panel-header"><div><p class="eyebrow">Actividad</p><h3 class="font-display text-lg font-bold">Ventas recientes</h3></div><a href="{{ url_for('admin_new_sale') }}" class="btn btn-primary btn-sm">Nueva venta</a></div><div id="recent-sales" class="panel-body space-y-3"></div></article>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>{% endblock %}

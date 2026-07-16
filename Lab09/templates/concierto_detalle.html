@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block page_id %}concierto-detalle{% endblock %}
+{% block content %}
+<div id="concert-detail" data-concert-id="{{ concert_id }}">
+  <div class="skeleton h-[28rem] rounded-3xl"></div>
+</div>
+<section class="mt-4 grid gap-4 xl:grid-cols-[1fr_.8fr]">
+  <article class="panel"><div class="panel-header"><div><p class="eyebrow">Actividad</p><h3 class="font-display text-lg font-bold">Ventas recientes</h3></div></div><div id="concert-sales" class="panel-body"></div></article>
+  <article class="panel"><div class="panel-header"><div><p class="eyebrow">Recurso</p><h3 class="font-display text-lg font-bold">Diseño de entrada</h3></div></div><div id="ticket-preview" class="panel-body"></div></article>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/conciertos.js') }}"></script>{% endblock %}

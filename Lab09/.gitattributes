@@ -1,0 +1,9 @@
+# Tratar imágenes como archivos binarios.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+
+# Los SVG siguen siendo texto y Git puede mostrar sus cambios.
+*.svg text eol=lf
